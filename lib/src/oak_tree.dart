@@ -15,10 +15,10 @@ extension ViewStateExt on ViewState {
 class BaseManager extends ChangeNotifier {
   ViewState _state = ViewState.idle;
 
-  ViewState get state => _state;
+  ViewState get viewstate => _state;
 
   /// Covers the main four states: idle, busy, error, and success
-  void setState(ViewState viewState) {
+  void setViewState(ViewState viewState) {
     _state = viewState;
     try {
       notifyListeners();
@@ -33,8 +33,7 @@ class BaseManager extends ChangeNotifier {
 }
 
 class BaseView<T extends BaseManager> extends StatefulWidget {
-  final Widget Function(BuildContext context, T viewmodel, Widget? child)
-      builder;
+  final Widget Function(BuildContext context, T manager, Widget? child) builder;
 
   final Function(T)? afterLayout;
   final Function(T)? beforeLayout;
@@ -63,19 +62,19 @@ class BaseView<T extends BaseManager> extends StatefulWidget {
 
 class _BaseViewState<T extends BaseManager> extends State<BaseView<T>>
     with WidgetsBindingObserver {
-  T viewmodel = locator<T>();
+  T manager = oak<T>();
   bool triggerFunctionAfterResumeFromBackground = false;
 
   @override
   void initState() {
     if (widget.beforeLayout != null) {
-      widget.beforeLayout!(viewmodel);
+      widget.beforeLayout!(manager);
       WidgetsBinding.instance.addObserver(this);
     }
 
     if (widget.afterLayout != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
-        widget.afterLayout!(viewmodel);
+        widget.afterLayout!(manager);
       });
     }
     super.initState();
@@ -88,22 +87,22 @@ class _BaseViewState<T extends BaseManager> extends State<BaseView<T>>
     switch (state) {
       case AppLifecycleState.resumed:
         if (widget.onResumed != null) {
-          widget.onResumed!(viewmodel);
+          widget.onResumed!(manager);
         }
         if (widget.onResumeFromBackground != null &&
             triggerFunctionAfterResumeFromBackground) {
-          widget.onResumeFromBackground!(viewmodel);
+          widget.onResumeFromBackground!(manager);
           triggerFunctionAfterResumeFromBackground = false;
         }
         break;
       case AppLifecycleState.inactive:
         if (widget.onInactive != null) {
-          widget.onInactive!(viewmodel);
+          widget.onInactive!(manager);
         }
         break;
       case AppLifecycleState.paused:
         if (widget.onPaused != null) {
-          widget.onPaused!(viewmodel);
+          widget.onPaused!(manager);
         }
 
         if (widget.onResumeFromBackground != null) {
@@ -112,7 +111,7 @@ class _BaseViewState<T extends BaseManager> extends State<BaseView<T>>
         break;
       case AppLifecycleState.detached:
         if (widget.onDetached != null) {
-          widget.onDetached!(viewmodel);
+          widget.onDetached!(manager);
         }
         break;
     }
@@ -120,15 +119,15 @@ class _BaseViewState<T extends BaseManager> extends State<BaseView<T>>
 
   @override
   Widget build(BuildContext context) {
-    locator<BuildContextService>().setContext(context);
+    oak<BuildContextService>().setContext(context);
     return ChangeNotifierProvider<T>.value(
-        value: viewmodel, child: Consumer<T>(builder: widget.builder));
+        value: manager, child: Consumer<T>(builder: widget.builder));
   }
 
   @override
   void dispose() {
     if (widget.onDispose != null) {
-      widget.onDispose!(viewmodel);
+      widget.onDispose!(manager);
     }
 
     WidgetsBinding.instance.removeObserver(this);
@@ -146,11 +145,14 @@ class BuildContextService {
   }
 }
 
-GetIt locator = GetIt.instance;
+GetIt oak = GetIt.instance;
 
-Future<void> setupLocator(Function(dynamic) registerCallback) async {
-  locator.registerLazySingleton(() => BuildContextService());
-  await registerCallback(dynamic);
+Future<void> setupOakTree({Function()? callback}) async {
+  oak.registerLazySingleton(() => BuildContextService());
 
-  await locator.allReady();
+  if (callback != null) {
+    await callback();
+  }
+
+  await oak.allReady();
 }

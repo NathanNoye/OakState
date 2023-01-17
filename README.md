@@ -101,13 +101,15 @@ Go back to your main.dart and make this change:
 ```dart
 void main() async {
   await setupLocator(callback: () {
-    locator.registerLazySingleton(() => TestManager()); // <------ That's the change
+    oak.registerLazySingleton(() => TestManager()); // <------ That's the change
   });
   runApp(const MyApp());
 }
 ```
 
-This change adds your manager to the magic. Now you can do all sorts of great things like accessing this manager from other managers, it'll allow you to manipulate the state of any manager and subsequently update the
+This change adds your manager to the magic. Now you can do all sorts of great things like accessing this manager from other managers, it'll allow you to manipulate the state of any manager and subsequently update the view of the manager that it's bound to.
+
+Done! You're ready to start building your app using OakTree
 
 
 ## Usage

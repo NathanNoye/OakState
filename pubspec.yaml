@@ -1,7 +1,7 @@
 name: oak_state
 description: A simple flutter state management
 version: 0.0.1
-homepage:
+homepage: https://github.com/NathanNoye/OakState
 
 environment:
   sdk: ">=2.17.5 <3.0.0"

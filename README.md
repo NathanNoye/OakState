@@ -54,6 +54,12 @@ class TestManager extends BaseManager {
     await Future.delayed(const Duration(seconds: 2));
     setViewState(ViewState.idle);
   }
+  
+  @override
+  void resetManager() {
+    // TODO: implement resetManager
+    // Note - this is enforced by OakTree, you'll want this to reset the state of your manager
+  }
 }
 ```
 
@@ -100,7 +106,7 @@ class TestView extends StatelessWidget {
 Go back to your main.dart and make this change:
 ```dart
 void main() async {
-  await setupLocator(callback: () {
+  await setupLocator(() {
     oak.registerLazySingleton(() => TestManager()); // <------ That's the change
   });
   runApp(const MyApp());
@@ -112,17 +118,48 @@ This change adds your manager to the magic. Now you can do all sorts of great th
 Done! You're ready to start building your app using OakTree
 
 
-## Usage
+## Testing
+You can test your managers any other way you would normally. Here's an example (Note, this test may not work with the recent changes but the idea is there)
 
- Include short and useful examples for package users. Add longer examples
-to `/example` folder. 
-
+### Testing the state and functions from a manager
 ```dart
-const like = 'sample';
+void main() {
+  setUp(() {
+    setupOakTree(() {
+      oak.registerLazySingleton(() => CounterManager());
+    });
+  });
+
+  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
+    CounterManager manager = oak<CounterManager>();
+
+    expect(manager.count, 0);
+
+    manager.increment();
+    await tester.pump();
+    expect(manager.count, 1);
+
+    manager.resetManager();
+    await tester.pump();
+    expect(manager.count, 0);
+  });
+
+  testWidgets('Counter view widget', (WidgetTester tester) async {
+    // Build our app and trigger a frame.
+    await tester.pumpWidget(const MyApp());
+
+    // Verify that our counter starts at 0.
+    expect(find.text('0'), findsOneWidget);
+    expect(find.text('1'), findsNothing);
+
+    // Tap the '+' icon and trigger a frame.
+    await tester.tap(find.byIcon(Icons.add));
+    await tester.pump();
+
+    // Verify that our counter has incremented.
+    expect(find.text('0'), findsNothing);
+    expect(find.text('1'), findsOneWidget);
+  });
+}
+
 ```
-
-## Additional information
-
- Tell users more about the package: where to find more information, how to 
-contribute to the package, how to file issues, what response they can expect 
-from the package authors, and more.

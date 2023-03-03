@@ -12,7 +12,7 @@ extension ViewStateExt on ViewState {
   bool get isSuccess => this == ViewState.success;
 }
 
-class BaseManager extends ChangeNotifier {
+abstract class BaseManager extends ChangeNotifier {
   ViewState _state = ViewState.idle;
 
   ViewState get viewstate => _state;
@@ -30,6 +30,8 @@ class BaseManager extends ChangeNotifier {
   void rebuildWidgets() {
     notifyListeners();
   }
+
+  void resetManager();
 }
 
 class BaseView<T extends BaseManager> extends StatefulWidget {
@@ -147,12 +149,10 @@ class BuildContextService {
 
 GetIt oak = GetIt.instance;
 
-Future<void> setupOakTree({Function()? callback}) async {
+Future<void> setupOakTree(Function()? callback) async {
   oak.registerLazySingleton(() => BuildContextService());
 
-  if (callback != null) {
-    await callback();
-  }
+  await callback?.call();
 
   await oak.allReady();
 }
